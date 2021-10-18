@@ -119,7 +119,7 @@ class UserWidget extends HookWidget {
           children: [
             Center(
               child: Text(
-                'Ciao ${_auth.currentUser!.email}',
+                'Ciao\n${_auth.currentUser!.email}',
                 style: const TextStyle(fontSize: 24),
               ),
             ),

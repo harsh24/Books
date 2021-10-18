@@ -84,7 +84,9 @@ class _FavoritesPageState extends State<FavoritesPage>
                         style: TextStyle(fontSize: _fontsize),
                       ),
                       FittedBox(
+                        fit: BoxFit.contain,
                         child: SizedBox(
+                          width: _size.width,
                           height: _imagesize,
                           child: Image.asset(
                             'assets/images/books.png',

@@ -11,13 +11,14 @@ import 'package:fireauth/screens/wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   //await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
-  //FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+  //FirebaseFirestore.instance.useFirestoreEmulator('localhost', 9090);
   //FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
   runApp(const AuthExampleApp());
 }
@@ -60,8 +61,9 @@ class AuthExampleApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           //theme: ThemeData.dark(),
           theme: ThemeData(
-            appBarTheme:
-                const AppBarTheme(backgroundColor: Palette.primaryColor),
+            appBarTheme: const AppBarTheme(
+                backgroundColor: Palette.primaryColor,
+                systemOverlayStyle: SystemUiOverlayStyle.dark),
             visualDensity: VisualDensity.adaptivePlatformDensity,
           ),
           home: Wrapper(user: _auth.currentUser != null ? true : false),

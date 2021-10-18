@@ -9,7 +9,7 @@ class GoogleBooksService {
   Future<List<Book>> getBooks(
       String url, String index, String max, String? check) async {
     final uri = Uri.https('books.googleapis.com', '/books/v1/volumes', {
-      'q': check ?? 'intitle:' + url + '||inauthor:' + url,
+      'q': check ?? 'intitle:' + url + '|inauthor:' + url,
       'startIndex': index,
       'maxResults': max,
       'fields=': 'totalItems,items(volumeInfo(title,publisher,authors,categories,'
