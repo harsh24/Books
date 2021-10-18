@@ -1,7 +1,10 @@
 import 'package:fireauth/screens/book_finder_page.dart';
+import 'package:fireauth/screens/landing_page.dart';
+import 'package:fireauth/service/profile_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:provider/provider.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -18,6 +21,7 @@ class BottomNavScreen extends HookWidget {
       parent: _animationcontroller,
       curve: Curves.easeInCubic,
     );
+
     final List<Widget> _screens = [
       AnimatedBuilder(
         animation: _animation,
@@ -29,20 +33,20 @@ class BottomNavScreen extends HookWidget {
       ),
       AnimatedBuilder(
         animation: _animation,
-        child: Scaffold(
-          appBar: AppBar(),
-          body: Center(
-              child: TextButton(
-                  onPressed: () async {
-                    await _auth.signOut();
-                  },
-                  child: const Text('Sign out'))),
+        child: Consumer<ProfileProvider>(
+          builder: (context, profileProvider, child) {
+            return !profileProvider.isAuthentificated
+                ? const LandingPage(
+                    skip: false,
+                  )
+                : UserWidget(profileProvider: profileProvider);
+          },
         ),
         builder: (context, child) => FadeTransition(
           opacity: _animation,
           child: child,
         ),
-      )
+      ),
     ];
     final _currentIndex = useState(0);
 
@@ -67,7 +71,7 @@ class BottomNavScreen extends HookWidget {
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,
         elevation: 0.0,
-        items: [Icons.home, Icons.person]
+        items: [Icons.explore, Icons.person]
             .asMap()
             .map((key, value) => MapEntry(
                   key,
@@ -95,4 +99,43 @@ class BottomNavScreen extends HookWidget {
 
 class Palette {
   static const Color primaryColor = Color(0xFF473F97);
+}
+
+class UserWidget extends HookWidget {
+  const UserWidget({Key? key, required this.profileProvider}) : super(key: key);
+
+  final ProfileProvider profileProvider;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Account'),
+      ),
+      body: SizedBox(
+        height: MediaQuery.of(context).size.height * .3,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Center(
+              child: Text(
+                'Ciao ${_auth.currentUser!.email}',
+                style: const TextStyle(fontSize: 24),
+              ),
+            ),
+            Center(
+                child: TextButton(
+                    onPressed: () async {
+                      await _auth.signOut();
+                      profileProvider.isAuthentificated = false;
+                    },
+                    child: const Text(
+                      'Sign out',
+                      style: TextStyle(color: Colors.grey),
+                    ))),
+          ],
+        ),
+      ),
+    );
+  }
 }

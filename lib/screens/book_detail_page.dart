@@ -1,10 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fireauth/repository/db.dart';
 import 'package:fireauth/model/book.dart';
+import 'package:fireauth/screens/landing_page.dart';
+import 'package:fireauth/widget/previewbuttonwidget.dart';
+import 'package:fireauth/service/profile_provider.dart';
+import 'package:fireauth/utils/spacer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:provider/provider.dart';
 import 'package:readmore/readmore.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart' as url;
 
 class BookDetailsPage extends StatefulWidget {
   const BookDetailsPage({Key? key, required this.book, this.fav})
@@ -18,10 +24,6 @@ class BookDetailsPage extends StatefulWidget {
 
 class _BookDetailsPageState extends State<BookDetailsPage>
     with TickerProviderStateMixin {
-  late double _scale;
-  late AnimationController _controller;
-  late TabController _tabcontroller;
-  int _selectedIndex = 0;
   String date = '';
   Future<QuerySnapshot<Object?>>? _fetch;
 
@@ -29,27 +31,7 @@ class _BookDetailsPageState extends State<BookDetailsPage>
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(
-        milliseconds: 300,
-      ),
-      lowerBound: 0.0,
-      upperBound: 0.1,
-    )..addListener(() {
-        setState(() {});
-      });
-
     _fetch = Database.isbnExists(isbn: widget.book.isbn13!);
-    // fav = widget.fav != null ? true : false;
-
-//Tab Controller
-    _tabcontroller = TabController(length: 2, vsync: this);
-    _tabcontroller.addListener(() {
-      setState(() {
-        _selectedIndex = _tabcontroller.index;
-      });
-    });
 
 //Publish date Format
     String dateString = widget.book.publishedDate!;
@@ -68,46 +50,53 @@ class _BookDetailsPageState extends State<BookDetailsPage>
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
-    _tabcontroller.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final item = widget.book;
-    _scale = 1 - _controller.value;
+    final ProfileProvider profileProvider =
+        Provider.of<ProfileProvider>(context, listen: false);
 
     return Scaffold(
-      body: FutureBuilder(
-          future: _fetch,
-          builder: (context, AsyncSnapshot<QuerySnapshot?> snapshot) {
-            bool? fav;
-            String? docid;
-
-            if (snapshot.hasData &&
-                snapshot.connectionState == ConnectionState.done) {
-              final data = snapshot.data!;
-              fav = data.size > 0 ? true : false;
-              docid = fav ? data.docs[0].id : null;
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return Button(
+      body: !profileProvider.isAuthentificated
+          ? _Details(
               item: item,
               date: date,
-              fav: fav!,
-              docId: docid,
-            );
-          }),
+              fav: false,
+              docId: null,
+            )
+          : FutureBuilder(
+              future: _fetch,
+              builder: (context, AsyncSnapshot<QuerySnapshot?> snapshot) {
+                bool? fav;
+                String? docid;
+
+                if (snapshot.hasData &&
+                    snapshot.connectionState == ConnectionState.done) {
+                  final data = snapshot.data!;
+                  fav = data.size > 0 ? true : false;
+                  docid = fav ? data.docs[0].id : null;
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return _Details(
+                  item: item,
+                  date: date,
+                  fav: fav!,
+                  docId: docid,
+                );
+              }),
     );
   }
 }
 
-class Button extends HookWidget {
-  const Button(
+class _Details extends HookWidget {
+  const _Details(
       {Key? key,
       required this.item,
       required this.date,
@@ -122,68 +111,82 @@ class Button extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _controller = useAnimationController(
-        duration: const Duration(seconds: 2), lowerBound: 0.0, upperBound: 0.1);
-    double _scale = 1 - _controller.value;
-    final _id = useState(docId);
+    final ProfileProvider profileProvider =
+        Provider.of<ProfileProvider>(context, listen: false);
 
+    final _selectedIndex = useState(0);
     final _tabcontroller = useTabController(initialLength: 2);
+    _tabcontroller.addListener(() {
+      _selectedIndex.value = _tabcontroller.index;
+    });
     final _fav = useState(fav);
-    final i = useState(0);
-    final futures = useState(<Future>[]);
 
     return Center(
       child: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: MediaQuery.of(context).size.height * .5,
+            expandedHeight: MediaQuery.of(context).size.height * .35,
             flexibleSpace: SizedBox(
-              height: MediaQuery.of(context).size.height * .5,
-              child: Stack(children: [
-                Align(
-                    alignment: Alignment.center,
-                    child: TabBarView(controller: _tabcontroller, children: [
-                      Image.network(item.thumbnailUrl ?? ''),
-                      Center(
-                          child: Text(
-                        (item.pageCount != 'null'
-                                ? (item.pageCount! + ' pages\n\n')
-                                : '') +
-                            (item.publishedDate != null
-                                ? 'Published ' + date
-                                : '') +
-                            (item.publisher != null
-                                ? '\nby ' + item.publisher!
-                                : '') +
-                            (item.isbn13 != null
-                                ? '\n\nISBN: ' + item.isbn13!
-                                : ''),
-                        textAlign: TextAlign.center,
-                      )),
-                    ])),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      2,
-                      (index) {
-                        final _color = _tabcontroller.index == index
-                            ? Colors.white
-                            : Colors.grey;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                          child: Icon(
-                            Icons.circle,
-                            size: 10,
-                            color: _color,
+              height: MediaQuery.of(context).size.height * .45,
+              child: Align(
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabcontroller,
+                        children: [
+                          item.thumbnailUrl != null
+                              ? Image.network(item.thumbnailUrl!)
+                              : const FlutterLogo(),
+                          Center(
+                            child: Text(
+                              (item.pageCount != 'null'
+                                      ? (item.pageCount! + ' pages\n\n')
+                                      : '') +
+                                  (item.publishedDate != null
+                                      ? 'Published ' + date
+                                      : '') +
+                                  (item.publisher != null
+                                      ? '\nby ' + item.publisher!
+                                      : '') +
+                                  (item.isbn13 != null
+                                      ? '\n\nISBN: ' + item.isbn13!
+                                      : ''),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
-                  ),
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          2,
+                          (index) {
+                            final _color = _selectedIndex.value == index
+                                ? Colors.white
+                                : Colors.grey;
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 2.0),
+                              child: Icon(
+                                Icons.circle,
+                                size: 10,
+                                color: _color,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ]),
+              ),
             ),
           ),
           SliverList(
@@ -201,7 +204,8 @@ class Button extends HookWidget {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
                         ),
                       ),
                     ),
@@ -211,11 +215,11 @@ class Button extends HookWidget {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 14.0,
-                        color: Colors.grey,
+                        //color: Colors.black,
                       ),
                     ),
                     const Padding(
-                      padding: EdgeInsets.fromLTRB(0, 12.0, 0, 12.0),
+                      padding: EdgeInsets.fromLTRB(0, 8.0, 0, 8.0),
                       child: Divider(
                         color: Colors.grey,
                         indent: 20,
@@ -242,12 +246,12 @@ class Button extends HookWidget {
                                               color: index <
                                                       item.averageRating!
                                                           .toInt()
-                                                  ? Colors.orange[700]
+                                                  ? Colors.orange[800]
                                                   : Colors.grey[300],
                                             )
                                           : HalfFilledIcon(
                                               icon: Icons.star,
-                                              color: Colors.orange[700]!,
+                                              color: Colors.orange[800]!,
                                               size: 16,
                                             );
                                     } else {
@@ -280,30 +284,106 @@ class Button extends HookWidget {
                       ],
                     ),
                     const Padding(
-                      padding: EdgeInsets.fromLTRB(0, 12.0, 0, 12.0),
+                      padding: EdgeInsets.fromLTRB(0, 8.0, 0, 8.0),
                       child: Divider(
                         color: Colors.grey,
                         indent: 20,
                         endIndent: 20,
                       ),
                     ),
-                    Transform.scale(
-                      scale: _scale,
-                      child: ElevatedButton.icon(
-                          onPressed: () async {
-                            _fav.value
-                                ? Database.deleteItem(docId: item.isbn13!)
-                                : Database.addItem(isbn: item.isbn13!);
+                    item.embeddable!
+                        ? Column(
+                            children: [
+                              PreviewButtonWidget(
+                                volumeId: item.isbn13!,
+                                availability: true,
+                                title: item.title,
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.fromLTRB(0, 12.0, 0, 12.0),
+                                child: Divider(
+                                  color: Colors.grey,
+                                  indent: 20,
+                                  endIndent: 20,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Container(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Column(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                if (profileProvider.isAuthentificated) {
+                                  _fav.value
+                                      ? Database.deleteItem(docId: item.isbn13!)
+                                      : Database.addItem(isbn: item.isbn13!);
 
-                            _fav.value = !_fav.value;
-                            /*   _fav.value
-                                ? _controller.reverse()
-                                : _controller.forward(); */
-                          },
-                          icon: Icon(Icons.favorite,
-                              color: _fav.value ? Colors.pink : Colors.white),
-                          label: Text((_fav.value ? 'Added' : 'Add') +
-                              ' to favorites')),
+                                  _fav.value = !_fav.value;
+                                } else {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                      builder: (BuildContext context) {
+                                        return Scaffold(
+                                          appBar: AppBar(),
+                                          body: const LandingPage(
+                                            skip: false,
+                                          ),
+                                        );
+                                      },
+                                      fullscreenDialog: true));
+                                }
+                              },
+                              icon: _fav.value
+                                  ? const Icon(Icons.favorite,
+                                      color: Colors.pink)
+                                  : const Icon(Icons.favorite_outline,
+                                      color: Colors.grey),
+                            ),
+                            const Text(
+                              'Favorite',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                                decoration: TextDecoration.underline,
+                              ),
+                            )
+                          ],
+                        ),
+                        Container(
+                            padding:
+                                const EdgeInsets.only(left: 4.0, right: 4.0),
+                            height: 60,
+                            child: const VerticalDivider(
+                              color: Colors.grey,
+                            )),
+                        Column(
+                          children: [
+                            IconButton(
+                                icon: const Icon(
+                                  Icons.open_in_new,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: //previewLink!.isNotEmpty && previewLink != null
+                                    () async {
+                                  url.launch(item.infoLink!);
+                                }),
+                            const Text(
+                              'Info Link',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                                decoration: TextDecoration.underline,
+                              ),
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                    const VerticalSpace(
+                      h: 35,
                     ),
                     item.description != null
                         ? Column(

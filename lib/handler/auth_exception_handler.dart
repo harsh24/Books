@@ -12,8 +12,8 @@ enum AuthResultStatus {
 
 class AuthExceptionHandler {
   static handleException(e) {
-    print(e.code);
-    var status;
+    //print(e.code);
+    AuthResultStatus status;
     switch (e.code) {
       case "ERROR_INVALID_EMAIL":
         status = AuthResultStatus.invalidEmail;
@@ -42,9 +42,7 @@ class AuthExceptionHandler {
     return status;
   }
 
-  ///
-  /// Accepts AuthExceptionHandler.errorType
-  ///
+  // Accepts AuthExceptionHandler.errorType
   static generateExceptionMessage(exceptionCode) {
     String errorMessage;
     switch (exceptionCode) {

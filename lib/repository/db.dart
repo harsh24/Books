@@ -15,11 +15,11 @@ class Database {
     Map<String, dynamic> data = <String, dynamic>{
       "isbn": isbn,
     };
-
     await documentReferencer
         .set(data)
-        //  .whenComplete(() => print("Notes item added to the database"))
-        .catchError((e) => print(e));
+        .catchError((e) {
+          //print(e);
+        });
     return documentReferencer.id;
   }
 
@@ -37,8 +37,9 @@ class Database {
         _mainCollection.doc(userUid).collection('items').doc(docId);
     await documentReferencer
         .delete()
-        // .whenComplete(() => print('Note item deleted from the database'))
-        .catchError((e) => print(e));
+        .catchError((e) {
+         // print(e);
+        });
   }
 
   static Future<QuerySnapshot<Object?>> isbnExists({
@@ -52,6 +53,8 @@ class Database {
         .get()
         //.whenComplete(() async => print('yes'))
         //.then((value) => _exist = value.size > 0 ? true : false)
-        .catchError((e) => print(e));
+        .catchError((e) {
+         // print(e);
+        });
   }
 }

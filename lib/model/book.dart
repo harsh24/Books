@@ -18,6 +18,8 @@ class Book extends MapConvertible {
     this.pageCount,
     this.publishedDate,
     this.publisher,
+    this.infoLink,
+    this.embeddable,
   });
 
   final String? title;
@@ -32,6 +34,8 @@ class Book extends MapConvertible {
   final String? publishedDate;
   final String? publisher;
   final String? pageCount;
+  final String? infoLink;
+  final bool? embeddable;
 
   @override
   Book fromMap(Map map) {

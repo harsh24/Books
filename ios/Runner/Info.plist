@@ -35,7 +35,16 @@
 					<string>fb952251208983382</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.361253502057-5e7pd7hmn02tgi1d2qicff5a2l03etkp</string>
+				</array>
+			</dict>
 		</array>
+
 		<key>FacebookAppID</key>
 		<string>952251208983382</string>
 		<key>FacebookClientToken</key>
@@ -61,7 +70,7 @@
 			<string>fbauth2</string>
 			<string>fbshareextension</string>
 		</array>
-
+		
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSAllowsLocalNetworking</key>
