@@ -27,7 +27,6 @@ class PreviewWebView extends HookWidget {
     String replaceVol = fileHtmlContents.replaceAll("replace", volumeId);
     String replacedW = replaceVol.replaceAll('{width}', width);
     String finalHtml = replacedW.replaceAll('{height}', height);
-    // print(finalHtml);
 
     _webViewController!.loadUrl(Uri.dataFromString(finalHtml,
             mimeType: 'text/html', encoding: Encoding.getByName('utf-8'))

@@ -52,7 +52,6 @@ class Database {
         .where('isbn', isEqualTo: isbn)
         .get()
         //.whenComplete(() async => print('yes'))
-        //.then((value) => _exist = value.size > 0 ? true : false)
         .catchError((e) {
          // print(e);
         });
