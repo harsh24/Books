@@ -17,10 +17,11 @@ class PreviewWebView extends HookWidget {
   final String title;
 
   _loadHtmlFromAssets(BuildContext context) async {
-    String width =
-        (MediaQuery.of(context).size.width * 2.56).floor().toString();
-    String height =
-        (MediaQuery.of(context).size.height * 2.24).floor().toString();
+    Size _size = MediaQuery.of(context).size;
+    double _param = 2.56;
+    if (Platform.isAndroid) _param = .9;
+    String width = (_size.width * _param).floor().toString();
+    String height = (_size.height * 2.24).floor().toString();
     String filePath = 'assets/html/webview.html';
     String fileHtmlContents = await rootBundle.loadString(filePath);
     String replaceVol = fileHtmlContents.replaceAll("replace", volumeId);
