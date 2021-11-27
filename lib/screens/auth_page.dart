@@ -138,7 +138,7 @@ class _AuthPageState extends State<AuthPage> {
         _success = 1;
       });
     } catch (e) {
-      // print(e);
+      print(e);
     }
   }
 
